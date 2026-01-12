@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="音の周波数理解トレーニングツール">
+    <title>周波数トレーニング - 周波数当てクイズ</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/animation.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/icons/favicon.ico">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">音の周波数トレーニング</h1>
+            <nav class="nav">
+                <button class="nav-btn active" data-mode="freeplay">フリープレイ</button>
+                <button class="nav-btn" data-mode="quiz">クイズ</button>
+                <button class="nav-btn" data-mode="history">履歴</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main">
+        <div class="container">
+            <!-- 音量警告 -->
+            <div id="volumeWarning" class="warning-modal" style="display: none;">
+                <div class="warning-content">
+                    <h2>音量警告</h2>
+                    <p>聴覚保護のため，音量を適切に調整してください．</p>
+                    <p>デフォルト音量: 30%</p>
+                    <p>高音域の長時間使用にご注意ください．</p>
+                    <button id="acceptWarning" class="btn btn-primary">了解</button>
+                </div>
+            </div>
+
+            <!-- フリープレイモード -->
+            <section id="freeplayMode" class="mode-section active">
+                <h2 class="section-title">フリープレイモード</h2>
+
+                <!-- 周波数コントロール -->
+                <div class="control-group">
+                    <label for="frequencySlider">周波数:</label>
+                    <div class="frequency-control">
+                        <input type="range" id="frequencySlider" min="1.301" max="4.301" step="0.001" value="3.000">
+                        <input type="text" id="frequencyInput" value="1,000">
+                        <span class="frequency-unit">Hz</span>
+                    </div>
+                    <div class="preset-buttons">
+                        <button class="preset-btn" data-freq="33">C1 (33Hz)</button>
+                        <button class="preset-btn" data-freq="65">C2 (65Hz)</button>
+                        <button class="preset-btn" data-freq="131">C3 (131Hz)</button>
+                        <button class="preset-btn" data-freq="262">C4 (262Hz)</button>
+                        <button class="preset-btn" data-freq="440">A4 (440Hz)</button>
+                        <button class="preset-btn" data-freq="523">C5 (523Hz)</button>
+                        <button class="preset-btn" data-freq="1047">C6 (1kHz)</button>
+                        <button class="preset-btn" data-freq="2093">C7 (2kHz)</button>
+                        <button class="preset-btn" data-freq="4186">C8 (4kHz)</button>
+                        <button class="preset-btn" data-freq="8372">C9 (8kHz)</button>
+                    </div>
+                </div>
+
+                <!-- 波形選択 -->
+                <div class="control-group">
+                    <label>波形:</label>
+                    <div class="waveform-buttons">
+                        <input type="radio" id="sine" name="waveform" value="sine" checked>
+                        <label for="sine" class="waveform-btn">正弦波</label>
+
+                        <input type="radio" id="triangle" name="waveform" value="triangle">
+                        <label for="triangle" class="waveform-btn">三角波</label>
+
+                        <input type="radio" id="square" name="waveform" value="square">
+                        <label for="square" class="waveform-btn">矩形波</label>
+
+                        <input type="radio" id="sawtooth" name="waveform" value="sawtooth">
+                        <label for="sawtooth" class="waveform-btn">のこぎり波</label>
+                    </div>
+                </div>
+
+                <!-- 等ラウドネス補正 -->
+                <div class="control-group">
+                    <label for="equalLoudness">等ラウドネス補正:</label>
+                    <select id="equalLoudness">
+                        <option value="off">OFF</option>
+                        <option value="40">40 phon (静かな環境)</option>
+                        <option value="60">60 phon (通常リスニング)</option>
+                        <option value="80">80 phon (大音量)</option>
+                    </select>
+                </div>
+
+                <!-- 音量コントロール -->
+                <div class="control-group">
+                    <label for="volumeSlider">音量:</label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="30">
+                    <span id="volumeValue">30%</span>
+                </div>
+
+                <!-- 再生コントロール -->
+                <div class="play-control">
+                    <button id="playBtn" class="btn btn-play">▶ 再生</button>
+                    <button id="stopBtn" class="btn btn-stop" disabled>■ 停止</button>
+                </div>
+
+                <!-- スペクトラム表示 -->
+                <div class="spectrum-container">
+                    <canvas id="spectrumCanvas" width="800" height="200"></canvas>
+                </div>
+            </section>
+
+            <!-- クイズモード -->
+            <section id="quizMode" class="mode-section">
+                <h2 class="section-title">周波数当てクイズ</h2>
+
+                <!-- 難易度選択 -->
+                <div id="difficultySelect" class="difficulty-select">
+                    <h3>難易度を選択:</h3>
+                    <div class="difficulty-descriptions">
+                        <p><strong>初級:</strong> 単一周波数のみ．</p>
+                        <p><strong>中級:</strong> 左右で異なる周波数を再生．左右それぞれの周波数を当てる．</p>
+                        <p><strong>上級:</strong> 3種類の周波数を合成して再生．3つの周波数をすべて当てる．<br>&ensp;&ensp;※解答は低い順（1→2→3）に入力してください．</p>
+                    </div>
+                    <div class="difficulty-buttons">
+                        <button class="difficulty-btn" data-difficulty="easy">初級</button>
+                        <button class="difficulty-btn" data-difficulty="medium">中級</button>
+                        <button class="difficulty-btn" data-difficulty="hard">上級</button>
+                    </div>
+                </div>
+
+                <!-- クイズ進行画面 -->
+                <div id="quizPlay" class="quiz-play" style="display: none;">
+                    <div class="quiz-header">
+                        <div class="quiz-info">
+                            <span id="questionNumber">問題 1/10</span>
+                            <span id="quizScore">スコア: 0/1000</span>
+                        </div>
+                        <div class="quiz-timer">
+                            残り時間: <span id="timeRemaining">30</span>秒
+                        </div>
+                        <button id="exitQuiz" class="btn btn-secondary" style="margin-top: 10px;">難易度選択に戻る</button>
+                    </div>
+
+                    <div class="quiz-content">
+                        <button id="quizPlayBtn" class="btn btn-play">▶ 音を再生</button>
+                        <div class="play-progress" style="display: none;">
+                            <div class="progress-bar">
+                                <div id="playProgressBar" class="progress-fill"></div>
+                            </div>
+                        </div>
+
+                        <div class="answer-section">
+                            <h3>あなたの解答:</h3>
+                            <div id="answerInputs">
+                                <!-- 動的に周波数入力が追加される -->
+                            </div>
+                            <button id="submitAnswer" class="btn btn-primary" disabled>解答する</button>
+                        </div>
+
+                        <div id="feedbackSection" class="feedback-section" style="display: none;">
+                            <!-- フィードバックがここに表示される -->
+                            <button id="nextQuestion" class="btn btn-primary" style="margin-top: 15px;">次の問題</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 結果画面 -->
+                <div id="quizResults" class="quiz-results" style="display: none;">
+                    <!-- 結果がここに表示される -->
+                </div>
+            </section>
+
+            <!-- 履歴モード -->
+            <section id="historyMode" class="mode-section">
+                <h2 class="section-title">クイズ履歴</h2>
+                <div id="historyContent">
+                    <button id="exportHistory" class="btn btn-secondary">履歴をエクスポート</button>
+                    <button id="clearHistory" class="btn btn-danger">履歴をクリア</button>
+                    <div id="historyList" class="history-list">
+                        <!-- 履歴がここに表示される -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 周波数トレーニング | Web Audio API / GitHub Pages</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/utils/MathUtils.js"></script>
+    <script src="js/utils/StorageManager.js"></script>
+    <script src="js/audio/Oscillator.js"></script>
+    <script src="js/audio/MultiOscillator.js"></script>
+    <script src="js/audio/EqualLoudness.js"></script>
+    <script src="js/audio/AudioEngine.js"></script>
+    <script src="js/ui/Visualizer.js"></script>
+    <script src="js/ui/ChartRenderer.js"></script>
+    <script src="js/ui/UIController.js"></script>
+    <script src="js/quiz/ScoreCalculator.js"></script>
+    <script src="js/quiz/QuestionGenerator.js"></script>
+    <script src="js/quiz/QuizManager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
